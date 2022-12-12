@@ -11,11 +11,12 @@ console.log(getSumTopThreeCalorieAmounts(dataTwo));
 
 async function getCalorieListFromFile(fileName: string): Promise<number[]> {
   const result: number[] = [];
+  let file = null;
 
   try {
     const filePath = getPathToTestFile('day-01', fileName);
 
-    const file = await open(filePath);
+    file = await open(filePath);
 
     for await (const line of file.readLines()) {
       if (line === '') {
@@ -25,7 +26,11 @@ async function getCalorieListFromFile(fileName: string): Promise<number[]> {
       }
     }
   } catch (err) {
-    return [];
+    console.error(err);
+  } finally {
+    if (file) {
+      file.close();
+    }
   }
 
   return result;

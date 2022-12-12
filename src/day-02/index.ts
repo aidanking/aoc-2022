@@ -3,7 +3,8 @@ import { getPathToTestFile } from '../helpers.js';
 
 interface MatchResult {
   winner: 'A' | 'B' | 'C' | 'X' | 'Y' | 'Z' | 'DRAW';
-  points: number;
+  winnerPoints: number;
+  loserPoints: number;
 }
 
 type MatchPairing =
@@ -21,49 +22,78 @@ type MatchResults = {
   [key in MatchPairing]: MatchResult;
 };
 
-const matchPairingsOne: MatchPairing[] = await readMatchDataFromFile(
-  'test.txt'
-);
+const matchResults: MatchResults = {
+  AX: { winner: 'DRAW', winnerPoints: 4, loserPoints: 4 },
+  AY: { winner: 'Y', winnerPoints: 8, loserPoints: 1 },
+  AZ: { winner: 'A', winnerPoints: 7, loserPoints: 3 },
+  BX: { winner: 'B', winnerPoints: 8, loserPoints: 1 },
+  BY: { winner: 'DRAW', winnerPoints: 5, loserPoints: 5 },
+  BZ: { winner: 'Z', winnerPoints: 9, loserPoints: 2 },
+  CX: { winner: 'X', winnerPoints: 7, loserPoints: 3 },
+  CY: { winner: 'C', winnerPoints: 9, loserPoints: 2 },
+  CZ: { winner: 'DRAW', winnerPoints: 6, loserPoints: 6 },
+};
 
-console.log(getTotalPointsForMe(matchPairingsOne));
+const testPairings: MatchPairing[] = await readMatchDataFromFile('test.txt');
+
+const inputPairings: MatchPairing[] = await readMatchDataFromFile('input.txt');
+
+console.log(getTotalPointsAimingWinAll(testPairings));
+console.log(getTotalPointsAimingWinAll(inputPairings));
+console.log(getTotalPointsAimingWinSelect(testPairings));
+console.log(getTotalPointsAimingWinSelect(inputPairings));
 
 async function readMatchDataFromFile(
   fileName: string
 ): Promise<MatchPairing[]> {
   const data: MatchPairing[] = [];
+  let file = null;
   try {
     const pathToFile: string = getPathToTestFile('day-02', fileName);
-    console.log(pathToFile);
 
-    const file = await open(pathToFile);
+    file = await open(pathToFile);
 
     for await (const line of file.readLines()) {
       const id: MatchPairing = line.split(' ').join('') as MatchPairing;
       data.push(id);
     }
-
-    return data;
   } catch (err) {
-    return [];
+    console.error(err);
+  } finally {
+    if (file) {
+      file.close();
+    }
   }
+  return data;
 }
 
-function getTotalPointsForMe(matchPairings: MatchPairing[]) {
-  const matchResults: MatchResults = {
-    AX: { winner: 'DRAW', points: 3 },
-    AY: { winner: 'Y', points: 8 },
-    AZ: { winner: 'A', points: 7 },
-    BX: { winner: 'B', points: 8 },
-    BY: { winner: 'DRAW', points: 3 },
-    BZ: { winner: 'Z', points: 9 },
-    CX: { winner: 'X', points: 7 },
-    CY: { winner: 'C', points: 9 },
-    CZ: { winner: 'DRAW', points: 3 }
+function getTotalPointsAimingWinAll(matchPairings: MatchPairing[]) {
+  return getTotalPoints(matchPairings, matchResults);
+}
+
+function getTotalPointsAimingWinSelect(matchPairings: MatchPairing[]) {
+  const matchResultsWinSelect: MatchResults = {
+    AX: matchResults.AZ,
+    AY: matchResults.AX,
+    AZ: matchResults.AY,
+    BX: matchResults.BX,
+    BY: matchResults.BY,
+    BZ: matchResults.BZ,
+    CX: matchResults.CY,
+    CY: matchResults.CZ,
+    CZ: matchResults.CX,
   };
 
+  return getTotalPoints(matchPairings, matchResultsWinSelect);
+}
+
+function getTotalPoints(
+  matchPairings: MatchPairing[],
+  matchResults: MatchResults
+) {
   let totalPointsForMe = 0;
 
-  matchPairingsOne.forEach((mathPairing: MatchPairing): void => {
+  matchPairings.forEach((mathPairing: MatchPairing): void => {
     const matchResult: MatchResult = matchResults[mathPairing];
     const winner = matchResult.winner;
     if (
@@ -72,10 +102,11 @@ function getTotalPointsForMe(matchPairings: MatchPairing[]) {
       winner === 'Z' ||
       winner === 'DRAW'
     ) {
-      totalPointsForMe += matchResult.points;
+      totalPointsForMe += matchResult.winnerPoints;
+    } else {
+      totalPointsForMe += matchResult.loserPoints;
     }
   });
 
   return totalPointsForMe;
 }
-
