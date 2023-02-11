@@ -10,7 +10,7 @@ async function readDataFromFileAsStringArray(
   const data: string[] = [];
 
   try {
-    const filePath = getPathToTestFile(day, fileName);
+    const filePath: string = getPathToTestFile(day, fileName);
     file = await open(filePath);
 
     for await (const line of file.readLines()) {
@@ -30,7 +30,7 @@ async function readDataFromFileAsString(
   day: string,
   fileName: string
 ): Promise<string> {
-  const filePath = getPathToTestFile(day, fileName);
+  const filePath: string = getPathToTestFile(day, fileName);
   let file: string | null = null;
 
   try {
@@ -46,6 +46,34 @@ async function readDataFromFileAsString(
   }
 }
 
+async function readDataFromFileAsNumberGrid(
+  day: string,
+  fileName: string
+): Promise<number[][]> {
+  const filePath: string = getPathToTestFile(day, fileName);
+  let file: FileHandle | null = null;
+  const grid: number[][] = [];
+
+  try {
+    file = await open(filePath);
+
+    for await (const line of file.readLines()) {
+      const data: number[] = [];
+      for (const character of line.split('')) {
+        data.push(Number(character));
+      }
+      grid.push(data);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (file) {
+      file.close();
+    }
+    return grid;
+  }
+}
+
 function getPathToTestFile(day: string, fileName: string): string {
   const projectRoot = cwd();
 
@@ -57,5 +85,6 @@ function getPathToTestFile(day: string, fileName: string): string {
 export {
   readDataFromFileAsStringArray,
   readDataFromFileAsString,
+  readDataFromFileAsNumberGrid,
   getPathToTestFile,
 };
